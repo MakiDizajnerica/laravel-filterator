@@ -143,6 +143,10 @@ class FilteratorManager
         switch ($type) {
             case 'string':
                 return $this->request->string($name)->trim()->toString();
+            case 'integer':
+                return intval($this->request->string($name)->trim()->toString());
+            case 'float':
+                return floatval($this->request->string($name)->trim()->toString());
             case 'boolean':
                 return $this->request->boolean($name);
             default:
