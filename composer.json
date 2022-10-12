@@ -1,0 +1,45 @@
+{
+    "name": "makidizajnerica/laravel-filterator",
+    "description": "Simple search filtering manager for models.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["php", "laravel", "framework", "model", "models", "filter", "filters", "search"],
+    "homepage": "https://github.com/MakiDizajnerica/laravel-filterator",
+    "authors": [
+        {
+            "name": "Nemanja Marijanovic",
+            "email": "n.marijanovic@hotmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "laravel/framework": ">=9.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.9",
+        "phpunit/phpunit": "^9.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "MakiDizajnerica\\Filterator\\": "src"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MakiDizajnerica\\Filterator\\Tests": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MakiDizajnerica\\Filterator\\FilteratorServiceProvider"
+            ],
+            "aliases": {
+                "Filterator": "MakiDizajnerica\\Filterator\\Facades\\Filterator"
+            }
+        }
+    }
+}
