@@ -137,6 +137,42 @@ class UserController extends Controller
 }
 ```
 
+Or you can pass closure to the `filterator` as a second argument like so:
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Builder;
+use MakiDizajnerica\Filterator\Facades\Filterator;
+
+class UserController extends Controller
+{
+    public function index()
+    {
+        $users = filterator(
+            User::class,
+            function (Builder $query, array $queryParams) {
+                $query->when($queryParams['email'], function ($query, $email) {
+                    $query->where('email', $email);
+                });
+
+                //
+            }
+        )->get();
+        // or
+        $users = Filterator::filter(User::class, /* closure */)->get();
+    }
+
+    // ...
+}
+```
+
+When closure is passed, other closures defined inside models `filterator` static method will not be called, but the `$queryParams` argument will have all defined params.
+
 Return type of the filterator method is `Illuminate\Database\Eloquent\Builder` so you can chain other query methods.
 
 ## Author
