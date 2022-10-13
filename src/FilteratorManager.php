@@ -28,11 +28,14 @@ class FilteratorManager
      *
      * @param class-string $modelClass
      * @param \Closure $closure
+     * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function filter($modelClass, ?Closure $closure = null): Builder
+    public function filter(
+        $modelClass, ?Closure $closure = null, ?Builder $query = null
+    ): Builder
     {
-        $query = $modelClass::query();
+        $query = $query ?: $modelClass::query();
 
         $unsortedFilters = $this->getFiltersFromModel($modelClass);
         $unsortedFiltersKeys = $this->getKeysFromFilters($unsortedFilters);
