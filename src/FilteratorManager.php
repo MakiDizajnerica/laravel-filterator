@@ -38,7 +38,6 @@ class FilteratorManager
         $unsortedFiltersKeys = $this->getKeysFromFilters($unsortedFilters);
 
         $params = $this->getQueryParams($unsortedFiltersKeys);
-        $filters = array_combine($this->flattenFiltersKeys($unsortedFiltersKeys), $unsortedFilters);
 
         if ($closure) {
             call_user_func_array($closure, [$query, $params]);
@@ -46,13 +45,17 @@ class FilteratorManager
             return $query;
         }
 
+        // We are combining flattened keys, keys without
+        // the defined type and closures.
+        $filters = array_combine(
+            $this->flattenFiltersKeys($unsortedFiltersKeys),
+            $unsortedFilters
+        );
+
         foreach ($filters as $key => $closure) {
             $value = $params[$key];
 
             if (! blank($value) && $closure instanceof Closure) {
-                // We are calling the filter closure only if it is defined
-                // and if "$param" value is present, then passing model builder,
-                // filter value from the request and all other params.
                 call_user_func_array($closure, [$query, $value, $params]);
             }
         }
@@ -92,7 +95,7 @@ class FilteratorManager
         $keys = [];
 
         // We are going to explode the key for each filter
-        // in order to get the name and type if it is defined.
+        // in order to get the name and type, if it is defined.
         foreach ($filters as $key => $closure) {
             array_push($keys, array_pad(
                 explode(':', is_numeric($key) ? $closure : $key, 2),
@@ -112,6 +115,8 @@ class FilteratorManager
      */
     protected function flattenFiltersKeys(array $filtersKeys): array
     {
+        // We are going to flatten filters keys to get single dimensional
+        // array containing only name of the keys.
         return array_map(fn ($key) => head($key), $filtersKeys);
     }
 
