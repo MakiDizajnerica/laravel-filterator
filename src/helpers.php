@@ -6,15 +6,12 @@ if (! function_exists('filterator')) {
     /**
      * Filter model.
      *
-     * @param class-string $modelClass
+     * @param \Illuminate\Database\Eloquent\Builder|class-string $model
      * @param \Closure $closure
-     * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    function filterator(
-        $modelClass, ?Closure $closure = null, ?Builder $query = null
-    ): Builder
+    function filterator($model, ?Closure $closure = null): Builder
     {
-        return app('makidizajnerica-filterator')->filter($modelClass, $closure, $query);
+        return app('makidizajnerica-filterator')->filter($model, $closure);
     }
 }

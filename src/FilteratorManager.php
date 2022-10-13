@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use MakiDizajnerica\Filterator\Contracts\Filterable;
 
@@ -26,18 +27,15 @@ class FilteratorManager
     /**
      * Filter model.
      *
-     * @param class-string $modelClass
+     * @param \Illuminate\Database\Eloquent\Builder|class-string $model
      * @param \Closure $closure
-     * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function filter(
-        $modelClass, ?Closure $closure = null, ?Builder $query = null
-    ): Builder
+    public function filter($model, ?Closure $closure = null): Builder
     {
-        $query = $query ?: $modelClass::query();
+        $query = is_string($model) ? $model::query() : $model;
 
-        $unsortedFilters = $this->getFiltersFromModel($modelClass);
+        $unsortedFilters = $this->getFiltersFromModel($query->getModel());
         $unsortedFiltersKeys = $this->getKeysFromFilters($unsortedFilters);
 
         $params = $this->getQueryParams($unsortedFiltersKeys);
@@ -66,20 +64,22 @@ class FilteratorManager
     /**
      * Get filters for the model.
      * 
-     * @param class-string $modelClass
+     * @param \Illuminate\Database\Eloquent\Model $model
      * @return array<string, Closure>
      * 
      * @throws \InvalidArgumentException
      */
-    protected function getFiltersFromModel($modelClass): array
+    protected function getFiltersFromModel(Model $model): array
     {
-        if (! in_array(Filterable::class, class_implements($modelClass) ?? [])) {
+        if (! ($model instanceof Filterable)) {
+            $modelClass = get_class($model);
+
             throw new InvalidArgumentException(
                 "{$modelClass} must implement MakiDizajnerica\Filterator\Contracts\Filterable interface."
             );
         }
 
-        return $modelClass::filterator();
+        return $model->filterator();
     }
 
     /**

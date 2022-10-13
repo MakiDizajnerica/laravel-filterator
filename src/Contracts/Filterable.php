@@ -9,5 +9,5 @@ interface Filterable
      *
      * @return array<string, Closure>
      */
-    public static function filterator(): array;
+    public function filterator(): array;
 }

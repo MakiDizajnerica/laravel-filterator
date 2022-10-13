@@ -10,7 +10,7 @@ composer require makidizajnerica/laravel-filterator
 
 ## Usage
 
-Your model needs to implement `MakiDizajnerica\Filterator\Contracts\Filterable`. Next define `filterator` static method that will return filters for the model:
+Your model needs to implement `MakiDizajnerica\Filterator\Contracts\Filterable`. Next define `filterator` method that will return filters for the model:
 
 ```php
 <?php
@@ -28,7 +28,7 @@ class User extends Model implements FilterableContract
      *
      * @return array<string, Closure>
      */
-    public static function filterator(): array
+    public function filterator(): array
     {
         return [
             'name' => fn (Builder $query, $value) => $query->where('name', 'LIKE', "%{$value}%"),
@@ -59,7 +59,7 @@ class User extends Model implements FilterableContract
      *
      * @return array<string, Closure>
      */
-    public static function filterator(): array
+    public function filterator(): array
     {
         return [
             'name:string' => fn (Builder $query, $value) => $query->where('name', 'LIKE', "%{$value}%"),
@@ -98,7 +98,7 @@ class User extends Model implements FilterableContract
      *
      * @return array<string, Closure>
      */
-    public static function filterator(): array
+    public function filterator(): array
     {
         return [
             'name:string' => fn (Builder $query, $value, array $queryParams) => $query->where('name', 'LIKE', "%{$value}%"),
@@ -130,7 +130,8 @@ class UserController extends Controller
         // or
         $users = Filterator::filter(User::class)->get();
 
-        $users = Filterator::filter(User::class)->paginate(10);
+        // You can also pass Builder instance.
+        $users = filterator(User::query())->get();
     }
 
     // ...
@@ -171,7 +172,7 @@ class UserController extends Controller
 }
 ```
 
-When closure is passed, other closures defined inside models `filterator` static method will not be called, but the `$queryParams` argument will have all defined params.
+When closure is passed, other closures defined inside models `filterator` method will not be called, but the `$queryParams` argument will have all defined params.
 
 Return type of the filterator method is `Illuminate\Database\Eloquent\Builder` so you can chain other query methods.
 
