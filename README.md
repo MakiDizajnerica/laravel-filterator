@@ -76,7 +76,7 @@ Available types:
 |:------- |:---------------------------------- |:------------------------------------ |
 | string  | '{param}:string'                   | 'name:string'                        |
 | integer | '{param}:integer'                  | 'count:integer'                      |
-| float   | '{param}:float'                    | 'price:float'                        |
+| float   | '{param}:float,{decimals}'         | 'price:float,2'                      |
 | boolean | '{param}:boolean'                  | 'active:boolean'                     |
 | date    | '{param}:date,{format},{timezone}' | 'born_at:date,Y-m-d,Europe/Belgrade' |
 

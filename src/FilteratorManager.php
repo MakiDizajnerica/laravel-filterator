@@ -50,7 +50,8 @@ class FilteratorManager
             $value = $params[$key];
 
             if (! blank($value) && $closure instanceof Closure) {
-                // We are calling the filter closure and passing model builder,
+                // We are calling the filter closure only if it is defined
+                // and if "$param" value is present, then passing model builder,
                 // filter value from the request and all other params.
                 call_user_func_array($closure, [$query, $value, $params]);
             }
@@ -92,7 +93,7 @@ class FilteratorManager
         // in order to get the name and type if it is defined.
         foreach ($filters as $key => $closure) {
             array_push($keys, array_pad(
-                explode(':', is_numeric($key) ? $closure : $key),
+                explode(':', is_numeric($key) ? $closure : $key, 2),
                 2,
                 null
             ));
@@ -141,17 +142,21 @@ class FilteratorManager
     protected function getQueryParamByType($name, $type)
     {
         switch ($type) {
-            case 'string':
-                return $this->request->string($name)->trim()->toString();
-            case 'integer':
-                return intval($this->request->string($name)->trim()->toString());
-            case 'float':
-                return floatval($this->request->string($name)->trim()->toString());
-            case 'boolean':
-                return $this->request->boolean($name);
+            case 'string': return $this->request->string($name)->trim()->toString();
+            case 'integer': return intval($this->request->string($name)->trim()->toString());
+            case 'boolean': return $this->request->boolean($name);
             default:
+                if (Str::startsWith($type, 'float')) {
+                    [$type, $decimals] = array_pad(explode(',', $type, 2), 2, 2);
+        
+                    return number_format(
+                        floatval($this->request->string($name)->trim()->toString()),
+                        intval($decimals)
+                    );
+                }
+
                 if (Str::startsWith($type, 'date')) {
-                    [$type, $format, $timezone] = array_pad(explode(',', $type), 3, null);
+                    [$type, $format, $timezone] = array_pad(explode(',', $type, 3), 3, null);
         
                     return $this->request->date($name, $format, $timezone);
                 }
