@@ -7,7 +7,6 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use MakiDizajnerica\Filterator\Contracts\Filterable;
 
 class FilteratorManager
@@ -29,9 +28,9 @@ class FilteratorManager
      *
      * @param \Illuminate\Database\Eloquent\Builder|class-string $model
      * @param \Closure $closure
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return mixed
      */
-    public function filter($model, ?Closure $closure = null): Builder
+    public function filter($model, ?Closure $closure = null)
     {
         $query = is_string($model) ? $model::query() : $model;
 
@@ -148,6 +147,7 @@ class FilteratorManager
             case 'string': return $this->request->string($name)->trim()->toString();
             case 'integer': return intval($this->request->string($name)->trim()->toString());
             case 'boolean': return $this->request->boolean($name);
+            case null: return $this->request->query($name);
             default:
                 if (Str::startsWith($type, 'float')) {
                     [$type, $decimals] = array_pad(explode(',', $type, 2), 2, 2);
