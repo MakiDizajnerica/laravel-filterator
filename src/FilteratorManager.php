@@ -3,6 +3,7 @@
 namespace MakiDizajnerica\Filterator;
 
 use Closure;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -28,13 +29,14 @@ class FilteratorManager
      *
      * @param \Illuminate\Database\Eloquent\Builder|class-string $model
      * @param \Closure $closure
+     * @param string $group
      * @return mixed
      */
-    public function filter($model, ?Closure $closure = null)
+    public function filter($model, ?Closure $closure = null, $group = null)
     {
-        $query = is_string($model) ? $model::query() : $model;
+        $query = $this->getQueryBuilderFromModel($model);
 
-        $unsortedFilters = $this->getFiltersFromModel($query->getModel());
+        $unsortedFilters = $this->getFiltersFromModel($query->getModel(), $group);
         $unsortedFiltersKeys = $this->getKeysFromFilters($unsortedFilters);
 
         $params = $this->getQueryParams($unsortedFiltersKeys);
@@ -64,14 +66,32 @@ class FilteratorManager
     }
 
     /**
+     * Get model query for the model.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder|class-string $model
+     * @return \Illuminate\Database\Eloquent\Builder
+     * 
+     * @throws \InvalidArgumentException
+     */
+    protected function getQueryBuilderFromModel($model)
+    {
+        if (is_string($model) && ! class_exists($model)) {
+            throw new InvalidArgumentException("{$model} does not exist.");
+        }
+
+        return is_string($model) ? $model::query() : $model;
+    }
+
+    /**
      * Get filters for the model.
      * 
      * @param \Illuminate\Database\Eloquent\Model $model
+     * @param string $group
      * @return array<string, Closure>
      * 
      * @throws \InvalidArgumentException
      */
-    protected function getFiltersFromModel(Model $model): array
+    protected function getFiltersFromModel(Model $model, $group): array
     {
         if (! ($model instanceof Filterable)) {
             $modelClass = get_class($model);
@@ -81,7 +101,17 @@ class FilteratorManager
             );
         }
 
-        return $model->filterator();
+        $filters = $model->filterator();
+
+        if ($group) {
+            $groupFilters = Arr::get($filters, $group, []);
+
+            if (is_array($groupFilters)) {
+                return $groupFilters;
+            }
+        }
+
+        return $filters;
     }
 
     /**

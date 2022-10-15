@@ -102,8 +102,8 @@ class User extends Model implements FilterableContract
     {
         return [
             'name:string' => fn (Builder $query, $value, array $queryParams) => $query->where('name', 'LIKE', "%{$value}%"),
-            'email' => fn (Builder $query, $value) => '',
-            'born_at:date,Y-m-d,Europe/Belgrade' => fn (Builder $query, $value) => '',
+            'email' => fn (Builder $query, $value) => /* ... */,
+            'born_at:date,Y-m-d,Europe/Belgrade' => fn (Builder $query, $value) => /* ... */,
         ];
     }
 
