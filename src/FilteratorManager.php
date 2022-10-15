@@ -101,8 +101,18 @@ class FilteratorManager
             );
         }
 
-        $filters = $model->filterator();
+        return $this->parseFilters($model->filterator(), $group);
+    }
 
+    /**
+     * Parse model filters.
+     * 
+     * @param array $filters
+     * @param string $group
+     * @return array<string, Closure>
+     */
+    protected function parseFilters(array $filters, $group)
+    {
         if ($group) {
             $groupFilters = Arr::get($filters, $group, []);
 
@@ -111,7 +121,7 @@ class FilteratorManager
             }
         }
 
-        return $filters;
+        return array_filter($filters, fn ($filter) => ! is_array($filter));
     }
 
     /**
