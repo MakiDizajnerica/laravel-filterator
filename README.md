@@ -19,7 +19,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use MakiDizajnerica\Contracts\Filterable as FilterableContract;
+use MakiDizajnerica\Filterator\Contracts\Filterable as FilterableContract;
 
 class User extends Model implements FilterableContract
 {
@@ -50,7 +50,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use MakiDizajnerica\Contracts\Filterable as FilterableContract;
+use MakiDizajnerica\Filterator\Contracts\Filterable as FilterableContract;
 
 class User extends Model implements FilterableContract
 {
@@ -89,7 +89,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use MakiDizajnerica\Contracts\Filterable as FilterableContract;
+use MakiDizajnerica\Filterator\Contracts\Filterable as FilterableContract;
 
 class User extends Model implements FilterableContract
 {
