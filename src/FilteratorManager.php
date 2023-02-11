@@ -7,6 +7,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
+use MakiDizajnerica\Filterator\Filter;
 use Illuminate\Database\Eloquent\Model;
 use MakiDizajnerica\Filterator\Contracts\Filterable;
 
@@ -54,11 +55,19 @@ class FilteratorManager
             $unsortedFilters
         );
 
-        foreach ($filters as $key => $closure) {
+        foreach ($filters as $key => $filter) {
             $value = $params[$key];
 
-            if (! blank($value) && $closure instanceof Closure) {
-                call_user_func_array($closure, [$query, $value, $params]);
+            list('defined' => $defined, 'default' => $default) = get_object_vars($filter);
+
+            if (blank($value)) {
+                if ($default) {
+                    call_user_func_array($default, [$query]);
+                }
+            } else {
+                if ($defined) {
+                    call_user_func_array($defined, [$query, $value, $params]);
+                }
             }
         }
 
@@ -109,7 +118,7 @@ class FilteratorManager
      * 
      * @param array $filters
      * @param string $group
-     * @return array<string, Closure>
+     * @return array<string, Closure|array>
      */
     protected function parseFilters(array $filters, $group)
     {
@@ -121,7 +130,7 @@ class FilteratorManager
             }
         }
 
-        return array_filter($filters, fn ($filter) => ! is_array($filter));
+        return array_filter($filters, fn ($filter) => $filter instanceof Filter);
     }
 
     /**
