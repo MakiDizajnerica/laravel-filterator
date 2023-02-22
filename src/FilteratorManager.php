@@ -88,6 +88,10 @@ class FilteratorManager
             throw new InvalidArgumentException("{$model} does not exist.");
         }
 
+        if ($model instanceof Model) {
+            return $model->query();
+        }
+
         return is_string($model) ? $model::query() : $model;
     }
 
