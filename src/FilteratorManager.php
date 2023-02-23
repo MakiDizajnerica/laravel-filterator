@@ -2,13 +2,12 @@
 
 namespace MakiDizajnerica\Filterator;
 
-use Closure;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use MakiDizajnerica\Filterator\Filter;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use MakiDizajnerica\Filterator\Contracts\Filterable;
 
 class FilteratorManager
@@ -17,7 +16,7 @@ class FilteratorManager
     protected $request;
 
     /**
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request $request
      * @return void
      */
     public function __construct(Request $request)
@@ -28,39 +27,30 @@ class FilteratorManager
     /**
      * Filter model.
      *
-     * @param \Illuminate\Database\Eloquent\Builder|class-string $model
-     * @param \Closure $closure
-     * @param string $group
-     * @return mixed
+     * @param  class-string $model
+     * @param  string|null $group
+     * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function filter($model, ?Closure $closure = null, $group = null)
+    public function filter(string $model, ?string $group = null): Builder
     {
-        $query = $this->getQueryBuilderFromModel($model);
+        $query = $this->getQueryBuilderForModel($model);
 
-        $unsortedFilters = $this->getFiltersFromModel($query->getModel(), $group);
-        $unsortedFiltersKeys = $this->getKeysFromFilters($unsortedFilters);
-
-        $params = $this->getQueryParams($unsortedFiltersKeys);
-
-        if ($closure) {
-            call_user_func_array($closure, [$query, $params]);
-
-            return $query;
-        }
+        $filters = $this->getFiltersForModel($query->getModel(), $group);
+        $filtersKeys = $this->extractFiltersKeys($filters);
+        $filtersKeysFlattened = $this->flattenFiltersKeys($filtersKeys);
 
         // We are combining flattened keys, keys without
-        // the defined type and closures.
-        $filters = array_combine(
-            $this->flattenFiltersKeys($unsortedFiltersKeys),
-            $unsortedFilters
-        );
+        // the defined type and actual filter instance.
+        $filters = array_combine($filtersKeysFlattened, $filters);
+
+        $params = $this->getQueryParams($filtersKeys);
 
         foreach ($filters as $key => $filter) {
             $value = $params[$key];
 
             list('defined' => $defined, 'default' => $default) = get_object_vars($filter);
 
-            if (blank($value)) {
+            if (is_null($value)) {
                 if ($default) {
                     call_user_func_array($default, [$query]);
                 }
@@ -75,36 +65,32 @@ class FilteratorManager
     }
 
     /**
-     * Get model query for the model.
+     * Get query builder for the model.
      *
-     * @param \Illuminate\Database\Eloquent\Builder|class-string $model
+     * @param  class-string $model
      * @return \Illuminate\Database\Eloquent\Builder
      * 
      * @throws \InvalidArgumentException
      */
-    protected function getQueryBuilderFromModel($model)
+    protected function getQueryBuilderForModel(string $model): Builder
     {
-        if (is_string($model) && ! class_exists($model)) {
+        if (! class_exists($model)) {
             throw new InvalidArgumentException("{$model} does not exist.");
         }
 
-        if ($model instanceof Model) {
-            return $model->query();
-        }
-
-        return is_string($model) ? $model::query() : $model;
+        return $model::query();
     }
 
     /**
      * Get filters for the model.
      * 
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param string $group
-     * @return array<string, Closure>
+     * @param  \Illuminate\Database\Eloquent\Model $model
+     * @param  string|null $group
+     * @return array<string, \MakiDizajnerica\Filterator\Filter>
      * 
      * @throws \InvalidArgumentException
      */
-    protected function getFiltersFromModel(Model $model, $group): array
+    protected function getFiltersForModel(Model $model, ?string $group): array
     {
         if (! ($model instanceof Filterable)) {
             $modelClass = get_class($model);
@@ -114,18 +100,8 @@ class FilteratorManager
             );
         }
 
-        return $this->parseFilters($model->filterator(), $group);
-    }
+        $filters = $model->filterator();
 
-    /**
-     * Parse model filters.
-     * 
-     * @param array $filters
-     * @param string $group
-     * @return array<string, Closure|array>
-     */
-    protected function parseFilters(array $filters, $group)
-    {
         if ($group) {
             $groupFilters = Arr::get($filters, $group, []);
 
@@ -138,91 +114,60 @@ class FilteratorManager
     }
 
     /**
-     * Extract keys from the filters.
+     * Extract filters keys.
      * 
-     * @param array $filters
+     * @param  array $filters
      * @return array<int, array>
      */
-    protected function getKeysFromFilters(array $filters): array
+    protected function extractFiltersKeys(array $filters): array
     {
-        $keys = [];
-
-        // We are going to explode the key for each filter
-        // in order to get the name and type, if it is defined.
-        foreach ($filters as $key => $closure) {
-            array_push($keys, array_pad(
-                explode(':', is_numeric($key) ? $closure : $key, 2),
-                2,
-                null
-            ));
-        }
-
-        return $keys;
+        return array_map(
+            function ($key) {
+                return array_pad(explode(':', $key, 2), 2, null);
+            },
+            array_keys($filters)
+        );
     }
 
     /**
      * Flatten filters keys.
      * 
-     * @param array $filtersKeys
+     * @param  array $keys
      * @return array<int, string>
      */
-    protected function flattenFiltersKeys(array $filtersKeys): array
+    protected function flattenFiltersKeys(array $keys): array
     {
         // We are going to flatten filters keys to get single dimensional
         // array containing only name of the keys.
-        return array_map(fn ($key) => head($key), $filtersKeys);
+        return array_map(fn ($key) => head($key), $keys);
     }
 
     /**
      * Get query params from the request.
      * 
-     * @param array $filtersKeys
+     * @param  array $keys
      * @return array<string, mixed>
      */
-    protected function getQueryParams(array $filtersKeys): array
+    protected function getQueryParams(array $keys): array
     {
         $params = [];
 
-        foreach ($filtersKeys as $key) {
+        foreach ($keys as $key) {
             [$name, $type] = $key;
+            [$type, $param1, $param2] = array_pad(explode(',', $type, 3), 3, null);
 
-            $params[$name] = $this->getQueryParamByType($name, $type);
+            $params[$name] = $this->request->has($name)
+                ? match ($type) {
+                    'string' => $this->request->string($name)->trim()->toString(),
+                    'integer' => intval($this->request->query($name)),
+                    'float' => number_format(floatval($this->request->query($name)), $param1),
+                    'boolean' => $this->request->boolean($name),
+                    'date' => $this->request->date($name, $param1, $param2),
+                    default => $this->request->query($name),
+                }
+                : null;
         }
 
         return $params;
-    }
-
-    /**
-     * Get query param by type.
-     * 
-     * @param string $name
-     * @param string $type
-     * @return mixed
-     */
-    protected function getQueryParamByType($name, $type)
-    {
-        switch ($type) {
-            case 'string': return $this->request->string($name)->trim()->toString();
-            case 'integer': return intval($this->request->string($name)->trim()->toString());
-            case 'boolean': return $this->request->boolean($name);
-            case null: return $this->request->query($name);
-            default:
-                if (Str::startsWith($type, 'float')) {
-                    [$type, $decimals] = array_pad(explode(',', $type, 2), 2, 2);
-        
-                    return number_format(
-                        floatval($this->request->string($name)->trim()->toString()),
-                        intval($decimals)
-                    );
-                }
-
-                if (Str::startsWith($type, 'date')) {
-                    [$type, $format, $timezone] = array_pad(explode(',', $type, 3), 3, null);
-        
-                    return $this->request->date($name, $format, $timezone);
-                }
-
-                return $this->request->query($name);
-        }
     }
 }

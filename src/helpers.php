@@ -1,16 +1,17 @@
 <?php
 
+use Illuminate\Database\Eloquent\Builder;
+
 if (! function_exists('filterator')) {
     /**
      * Filter model.
      *
-     * @param \Illuminate\Database\Eloquent\Builder|class-string $model
-     * @param \Closure $closure
-     * @param string $group
-     * @return mixed
+     * @param class-string $model
+     * @param string|null $group
+     * @return \Illuminate\Database\Eloquent\Builder
      */
-    function filterator($model, ?Closure $closure = null, $group = null)
+    function filterator(string $model, ?string $group = null): Builder
     {
-        return app('makidizajnerica-filterator')->filter($model, $closure, $group);
+        return app('makidizajnerica-filterator')->filter($model, $group);
     }
 }

@@ -11,13 +11,11 @@ class Filter
     public $default;
 
     /**
-     * Create a new filter.
-     * 
      * @param  callable|null $defined
      * @param  callable|null $default
      * @return void
      */
-    public function __construct(callable $defined = null, callable $default = null)
+    private function __construct(callable $defined = null, callable $default = null)
     {
         $this->defined = $defined;
         $this->default = $default;
@@ -41,7 +39,7 @@ class Filter
      * @param  callable $defined
      * @return static
      */
-    public static function defined(callable $defined)
+    public static function defined(callable $defined): static
     {
         return new static($defined);
     }
