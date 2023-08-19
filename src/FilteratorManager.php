@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use MakiDizajnerica\Filterator\Contracts\Filterable;
 
+/** @todo Add support for relations, whereHas() and wrap multiple filters inside */
 class FilteratorManager
 {
     /** @var \Illuminate\Http\Request */
@@ -50,7 +51,7 @@ class FilteratorManager
 
             list('defined' => $defined, 'default' => $default) = get_object_vars($filter);
 
-            if (is_null($value)) {
+            if (is_null($value) || $value === '') {
                 if ($default) {
                     call_user_func_array($default, [$query]);
                 }
@@ -122,9 +123,7 @@ class FilteratorManager
     protected function extractFiltersKeys(array $filters): array
     {
         return array_map(
-            function ($key) {
-                return array_pad(explode(':', $key, 2), 2, null);
-            },
+            fn ($key) => array_pad(explode(':', $key, 2), 2, null),
             array_keys($filters)
         );
     }
