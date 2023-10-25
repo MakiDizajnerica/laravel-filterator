@@ -5,15 +5,16 @@ namespace MakiDizajnerica\Filterator;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
-use MakiDizajnerica\Filterator\Filter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use MakiDizajnerica\Filterator\Filters\Filter;
 use MakiDizajnerica\Filterator\Contracts\Filterable;
 
-/** @todo Add support for relations, whereHas() and wrap multiple filters inside */
-class FilteratorManager
+final class FilteratorManager
 {
-    /** @var \Illuminate\Http\Request */
+    /**
+     * @var \Illuminate\Http\Request
+     */
     protected $request;
 
     /**
@@ -28,58 +29,35 @@ class FilteratorManager
     /**
      * Filter model.
      *
-     * @param  class-string $model
+     * @param  class-string $modelClass
      * @param  string|null $group
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function filter(string $model, ?string $group = null): Builder
+    public function filter(string $modelClass, string|null $group = null): Builder
     {
-        $query = $this->getQueryBuilderForModel($model);
-
+        $query = $this->getQueryBuilderForModel($modelClass);
         $filters = $this->getFiltersForModel($query->getModel(), $group);
-        $filtersKeys = $this->extractFiltersKeys($filters);
-        $filtersKeysFlattened = $this->flattenFiltersKeys($filtersKeys);
 
-        // We are combining flattened keys, keys without
-        // the defined type and actual filter instance.
-        $filters = array_combine($filtersKeysFlattened, $filters);
-
-        $params = $this->getQueryParams($filtersKeys);
-
-        foreach ($filters as $key => $filter) {
-            $value = $params[$key];
-
-            list('defined' => $defined, 'default' => $default) = get_object_vars($filter);
-
-            if (is_null($value) || $value === '') {
-                if ($default) {
-                    call_user_func_array($default, [$query]);
-                }
-            } else {
-                if ($defined) {
-                    call_user_func_array($defined, [$query, $value, $params]);
-                }
-            }
-        }
+        $this->applyFilters($filters, $query);
 
         return $query;
     }
 
     /**
      * Get query builder for the model.
-     *
-     * @param  class-string $model
-     * @return \Illuminate\Database\Eloquent\Builder
      * 
-     * @throws \InvalidArgumentException
+     * @param  class-string $modelClass
+     * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function getQueryBuilderForModel(string $model): Builder
+    protected function getQueryBuilderForModel(string $modelClass): Builder
     {
-        if (! class_exists($model)) {
-            throw new InvalidArgumentException("{$model} does not exist.");
+        if (! is_subclass_of($modelClass, Model::class)) {
+            throw new InvalidArgumentException(
+                sprintf('Model class [%s] must be instance of [%s].', $modelClass, Model::class)
+            );
         }
 
-        return $model::query();
+        return $modelClass::query();
     }
 
     /**
@@ -87,86 +65,44 @@ class FilteratorManager
      * 
      * @param  \Illuminate\Database\Eloquent\Model $model
      * @param  string|null $group
-     * @return array<string, \MakiDizajnerica\Filterator\Filter>
+     * @return array<string, \MakiDizajnerica\Filterator\Filters\Filter>
      * 
      * @throws \InvalidArgumentException
      */
     protected function getFiltersForModel(Model $model, ?string $group): array
     {
-        if (! ($model instanceof Filterable)) {
-            $modelClass = get_class($model);
-
+        if (! is_subclass_of($model, Filterable::class)) {
             throw new InvalidArgumentException(
-                "{$modelClass} must implement MakiDizajnerica\Filterator\Contracts\Filterable interface."
+                sprintf('Model class [%s] must implement [%s] interface.', get_class($model), Filterable::class)
             );
         }
 
-        $filters = $model->filterator();
+        $filters = $model->filters();
 
         if ($group) {
             $groupFilters = Arr::get($filters, $group, []);
 
-            if (is_array($groupFilters)) {
-                return $groupFilters;
-            }
+            $filters = is_array($groupFilters)
+                ? $groupFilters
+                : [];
         }
 
-        return array_filter($filters, fn ($filter) => $filter instanceof Filter);
+        return array_filter($filters, fn ($filter) => is_subclass_of($filter, Filter::class));
     }
 
     /**
-     * Extract filters keys.
+     * Apply filters to the query.
      * 
-     * @param  array $filters
-     * @return array<int, array>
+     * @param  array<string, \MakiDizajnerica\Filterator\Filters\Filter> $filters
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @return void
      */
-    protected function extractFiltersKeys(array $filters): array
+    protected function applyFilters(array $filters, Builder $query): void
     {
-        return array_map(
-            fn ($key) => array_pad(explode(':', $key, 2), 2, null),
-            array_keys($filters)
-        );
-    }
-
-    /**
-     * Flatten filters keys.
-     * 
-     * @param  array $keys
-     * @return array<int, string>
-     */
-    protected function flattenFiltersKeys(array $keys): array
-    {
-        // We are going to flatten filters keys to get single dimensional
-        // array containing only name of the keys.
-        return array_map(fn ($key) => head($key), $keys);
-    }
-
-    /**
-     * Get query params from the request.
-     * 
-     * @param  array $keys
-     * @return array<string, mixed>
-     */
-    protected function getQueryParams(array $keys): array
-    {
-        $params = [];
-
-        foreach ($keys as $key) {
-            [$name, $type] = $key;
-            [$type, $param1, $param2] = array_pad(explode(',', $type, 3), 3, null);
-
-            $params[$name] = $this->request->has($name)
-                ? match ($type) {
-                    'string' => $this->request->string($name)->trim()->toString(),
-                    'integer' => intval($this->request->query($name)),
-                    'float' => number_format(floatval($this->request->query($name)), $param1),
-                    'boolean' => $this->request->boolean($name),
-                    'date' => $this->request->date($name, $param1, $param2),
-                    default => $this->request->query($name),
-                }
-                : null;
+        foreach ($filters as $param => $filter) {
+            $filter->apply(
+                $query, $filter->extractValue($this->request, $param)
+            );
         }
-
-        return $params;
     }
 }

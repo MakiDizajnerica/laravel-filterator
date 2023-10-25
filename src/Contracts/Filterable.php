@@ -7,7 +7,7 @@ interface Filterable
     /**
      * Get filters for the filterator manager.
      *
-     * @return array<string, \MakiDizajnerica\Filterator\Filter>
+     * @return array<string, \MakiDizajnerica\Filterator\Filters\Filter>
      */
-    public function filterator(): array;
+    public function filters(): array;
 }

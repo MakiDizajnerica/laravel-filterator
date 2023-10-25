@@ -16,10 +16,7 @@ class FilteratorServiceProvider extends ServiceProvider
     {
         // $this->mergeConfigFrom(__DIR__ . '/../config/filterator.php', 'filterator');
 
-        $this->app->singleton(
-            'makidizajnerica-filterator',
-            fn ($app) => $app->makeWith(FilteratorManager::class, [$app->get('request')])
-        );
+        $this->app->singleton('makidizajnerica-filterator', fn ($app) => $app->make(FilteratorManager::class));
     }
 
     /**

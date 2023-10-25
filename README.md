@@ -10,7 +10,7 @@ composer require makidizajnerica/laravel-filterator
 
 ## Usage
 
-Your model needs to implement `\MakiDizajnerica\Filterator\Contracts\Filterable`. Next define `filterator` method that will return filters for the model:
+Your model needs to implement `\MakiDizajnerica\Filterator\Contracts\Filterable`. Next define `filters` method that will return filters for the model:
 
 ```php
 <?php
@@ -19,7 +19,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-
 use MakiDizajnerica\Filterator\Filter;
 use MakiDizajnerica\Filterator\Contracts\Filterable as FilterableContract;
 
@@ -30,12 +29,12 @@ class User extends Model implements FilterableContract
     /**
      * Get filters for the filterator manager.
      *
-     * @return array<string, \MakiDizajnerica\Filterator\Filter>
+     * @return array<string, \MakiDizajnerica\Filterator\Filters\Filter>
      */
-    public function filterator(): array
+    public function filters(): array
     {
         return [
-            'name' => Filter::defined(fn (Builder $query, $value) => $query->where('name', 'LIKE', "%{$value}%")),
+            'name' => Filter::string(fn (Builder $query, string $name) => $query->where('name', 'LIKE', "%{$name}%")),
         ];
     }
 }
@@ -43,46 +42,7 @@ class User extends Model implements FilterableContract
 
 Array key will be the query param name inside the request.
 
-You can also define the type of param:
-
-```php
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-
-use MakiDizajnerica\Filterator\Filter;
-use MakiDizajnerica\Filterator\Contracts\Filterable as FilterableContract;
-
-class User extends Model implements FilterableContract
-{
-    // ...
-
-    /**
-     * Get filters for the filterator manager.
-     *
-     * @return array<string, \MakiDizajnerica\Filterator\Filter>
-     */
-    public function filterator(): array
-    {
-        return [
-            'name:string' => Filter::defined(fn (Builder $query, string $value) => $query->where('name', 'LIKE', "%{$value}%")),
-        ];
-    }
-}
-```
-
-Available types:
-
-| Type    | Definition                           | Example                              |
-|:------- |:------------------------------------ |:------------------------------------ |
-| string  | '{param}:string'                     | 'name:string'                        |
-| integer | '{param}:integer'                    | 'count:integer'                      |
-| float   | '{param}:float,{?decimals}'          | 'price:float,2'                      |
-| boolean | '{param}:boolean'                    | 'active:boolean'                     |
-| date    | '{param}:date,{?format},{?timezone}' | 'born_at:date,Y-m-d,Europe/Belgrade' |
+There is also a couple of available filters:
 
 ```php
 <?php
@@ -92,7 +52,6 @@ namespace App\Models;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-
 use MakiDizajnerica\Filterator\Filter;
 use MakiDizajnerica\Filterator\Contracts\Filterable as FilterableContract;
 
@@ -103,20 +62,29 @@ class User extends Model implements FilterableContract
     /**
      * Get filters for the filterator manager.
      *
-     * @return array<string, \MakiDizajnerica\Filterator\Filter>
+     * @return array<string, \MakiDizajnerica\Filterator\Filters\Filter>
      */
-    public function filterator(): array
+    public function filters(): array
     {
         return [
-            'name:string' => Filter::defined(fn (Builder $query, string $name) => $query->where('name', 'LIKE', "%{$name}%")),
-            'email' => Filter::defined(fn (Builder $query, $email) => /* ... */),
-            'born_at:date,Y-m-d,Europe/Belgrade' => Filter::defined(fn (Builder $query, Carbon $date) => /* ... */),
+            'is_admin' => Filter::boolean(fn (Builder $query, bool $isAdmin) => $query->where('is_admin', $isAdmin)),
+
+            'created_at' => Filter::date(fn (Builder $query, Carbon $createdAt) => $query->whereDate('created_at', $createdAt))
+                ->format('Y-m-d') // optionally define format
+                ->timezone('Europe/Belgrade'), // optionally define timezone
+
+            'credit' => Filter::float(fn (Builder $query, float $credit) => $query->where('credit', $credit))
+                ->decimals(2), // optionally define number of decimals
+
+            'age' => Filter::integer(fn (Builder $query, int $age) => $query->where('age', $age)),
+
+            'name' => Filter::string(fn (Builder $query, string $name) => $query->where('name', 'LIKE', "%{$name}%")),
         ];
     }
 }
 ```
 
-You can also define default closure on the filter by calling `\MakiDizajnerica\Filterator\Filter::make()` method and passing second argument. First argument will represent defined closure, the one that gets called if query param is set. Other one is default, the one that gets called when query param is not set.
+You can also define default closure for the filter. Default closure gets called when query param is not set.
 
 ```php
 <?php
@@ -126,7 +94,6 @@ namespace App\Models;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-
 use MakiDizajnerica\Filterator\Filter;
 use MakiDizajnerica\Filterator\Contracts\Filterable as FilterableContract;
 
@@ -137,47 +104,40 @@ class User extends Model implements FilterableContract
     /**
      * Get filters for the filterator manager.
      *
-     * @return array<string, \MakiDizajnerica\Filterator\Filter>
+     * @return array<string, \MakiDizajnerica\Filterator\Filters\Filter>
      */
-    public function filterator(): array
+    public function filters(): array
     {
         return [
             // ...
-            'born_at:date,Y-m-d,Europe/Belgrade' => Filter::make(
-                fn (Builder $query, Carbon $date) => $query->whereDate('born_at', $date), // defined
-                fn (Builder $query) => $query->whereDate('born_at', '1985-05-05') // default
-            ),
+
+            'created_at' => Filter::date(fn (Builder $query, Carbon $createdAt) => $query->whereDate('created_at', $createdAt))
+                ->default(fn (Builder $query) => $query->whereDate('created_at', '1985-05-05')),
+
+            // ...
         ];
     }
 }
 ```
 
-Next inside your controller you can filter your model like so:
+Next, when you want to filter your model, you can do it like so:
 
 ```php
 <?php
 
-namespace App\Http\Controllers;
-
 use App\Models\User;
-use App\Http\Controllers\Controller;
-
 use MakiDizajnerica\Filterator\Facades\Filterator;
 
-class UserController extends Controller
-{
-    public function index()
-    {
-        $users = filterator(User::class)->get();
-        // or
-        $users = Filterator::filter(User::class)->get();
-    }
-
-    // ...
-}
+$users = filterator(User::class)->get();
+// or
+$users = Filterator::filter(User::class)->get();
 ```
 
 Return type of the filterator method is `\Illuminate\Database\Eloquent\Builder` so you can chain other query methods.
+
+## Adding new filters
+
+Todo
 
 ## Author
 
@@ -185,7 +145,7 @@ Return type of the filterator method is `\Illuminate\Database\Eloquent\Builder` 
 
 ## Licence
 
-Copyright © 2021, Nemanja Marijanovic <n.marijanovic@hotmail.com>
+Copyright © 2023, Nemanja Marijanovic <n.marijanovic@hotmail.com>
 
 All rights reserved.
 
