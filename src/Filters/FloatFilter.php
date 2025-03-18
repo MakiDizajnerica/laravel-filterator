@@ -35,7 +35,7 @@ final class FloatFilter extends Filter
     public function extractValue(Request $request, string $param): float|null
     {
         if ($request->has($param)) {
-            return round(floatval($request->query($param)), $this->decimals);
+            return round($request->float($param), $this->decimals);
         }
 
         return null;

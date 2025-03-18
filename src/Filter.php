@@ -3,6 +3,7 @@
 namespace MakiDizajnerica\Filterator;
 
 use InvalidArgumentException;
+use MakiDizajnerica\Filterator\Filters\ArrayFilter;
 use MakiDizajnerica\Filterator\Filters\DateFilter;
 use MakiDizajnerica\Filterator\Filters\FloatFilter;
 use MakiDizajnerica\Filterator\Filters\StringFilter;
@@ -16,6 +17,7 @@ final class Filter
      * @var array
      */
     protected static array $filters = [
+        'array' => ArrayFilter::class,
         'boolean' => BooleanFilter::class,
         'date' => DateFilter::class,
         'float' => FloatFilter::class,
