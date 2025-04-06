@@ -4,7 +4,7 @@ namespace MakiDizajnerica\Filterator\Filters;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 
 abstract class Filter
 {
@@ -75,9 +75,9 @@ abstract class Filter
     /**
      * Apply filter.
      * 
-     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder $query
      * @param  mixed $value
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return \Illuminate\Contracts\Database\Eloquent\Builder
      */
     public function apply(Builder $query, mixed $value): Builder
     {
@@ -89,9 +89,9 @@ abstract class Filter
     /**
      * Apply filter closure.
      * 
-     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder $query
      * @param  mixed $value
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return \Illuminate\Contracts\Database\Eloquent\Builder
      */
     private function applyClosure(Builder $query, mixed $value): Builder
     {
@@ -103,8 +103,8 @@ abstract class Filter
     /**
      * Apply default filter closure.
      * 
-     * @param  \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder $query
+     * @return \Illuminate\Contracts\Database\Eloquent\Builder
      */
     private function applyDefaultClosure(Builder $query): Builder
     {
