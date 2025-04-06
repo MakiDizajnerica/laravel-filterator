@@ -6,8 +6,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use MakiDizajnerica\Filterator\Filters\Filter;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use MakiDizajnerica\Filterator\Contracts\Filterable;
 
 final class FilteratorManager
@@ -29,9 +29,9 @@ final class FilteratorManager
     /**
      * Filter model.
      *
-     * @param  Illuminate\Database\Eloquent\Builder|class-string $model
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder|class-string $model
      * @param  string|null $group
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return \Illuminate\Contracts\Database\Eloquent\Builder
      */
     public function filter(Builder|string $model, string|null $group = null): Builder
     {
@@ -50,7 +50,7 @@ final class FilteratorManager
      * Get query builder for the model.
      * 
      * @param  class-string $modelClass
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return \Illuminate\Contracts\Database\Eloquent\Builder
      */
     protected function getQueryBuilderForModel(string $modelClass): Builder
     {
@@ -97,7 +97,7 @@ final class FilteratorManager
      * Apply filters to the query.
      * 
      * @param  array<string, \MakiDizajnerica\Filterator\Filters\Filter> $filters
-     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder $query
      * @return void
      */
     protected function applyFilters(array $filters, Builder $query): void
