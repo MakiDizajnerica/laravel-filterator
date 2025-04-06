@@ -29,13 +29,16 @@ final class FilteratorManager
     /**
      * Filter model.
      *
-     * @param  class-string $modelClass
+     * @param  Illuminate\Database\Eloquent\Builder|class-string $model
      * @param  string|null $group
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function filter(string $modelClass, string|null $group = null): Builder
+    public function filter(Builder|string $model, string|null $group = null): Builder
     {
-        $query = $this->getQueryBuilderForModel($modelClass);
+        $query = is_string($model)
+            ? $this->getQueryBuilderForModel($model)
+            : $model;
+
         $filters = $this->getFiltersForModel($query->getModel(), $group);
 
         $this->applyFilters($filters, $query);
