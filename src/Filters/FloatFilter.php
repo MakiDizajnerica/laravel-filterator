@@ -5,7 +5,7 @@ namespace MakiDizajnerica\Filterator\Filters;
 use Illuminate\Http\Request;
 use MakiDizajnerica\Filterator\Filters\Filter;
 
-final class FloatFilter extends Filter
+class FloatFilter extends Filter
 {
     /**
      * @var int

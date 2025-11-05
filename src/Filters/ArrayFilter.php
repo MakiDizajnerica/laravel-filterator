@@ -5,7 +5,7 @@ namespace MakiDizajnerica\Filterator\Filters;
 use Illuminate\Http\Request;
 use MakiDizajnerica\Filterator\Filters\Filter;
 
-final class ArrayFilter extends Filter
+class ArrayFilter extends Filter
 {
     /**
      * Extract value from request.

@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use MakiDizajnerica\Filterator\Filters\Filter;
 
-final class DateFilter extends Filter
+class DateFilter extends Filter
 {
     /**
      * @var string|null

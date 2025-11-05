@@ -5,7 +5,7 @@ namespace MakiDizajnerica\Filterator\Filters;
 use Illuminate\Http\Request;
 use MakiDizajnerica\Filterator\Filters\Filter;
 
-final class IntegerFilter extends Filter
+class IntegerFilter extends Filter
 {
     /**
      * Extract value from request.
