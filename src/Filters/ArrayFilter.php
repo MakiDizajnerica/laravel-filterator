@@ -2,6 +2,7 @@
 
 namespace MakiDizajnerica\Filterator\Filters;
 
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use MakiDizajnerica\Filterator\Filters\Filter;
 
@@ -17,7 +18,7 @@ class ArrayFilter extends Filter
     public function extractValue(Request $request, string $param): array|null
     {
         if ($request->has($param)) {
-            return $request->input($param);
+            return Arr::wrap($request->input($param));
         }
 
         return null;
